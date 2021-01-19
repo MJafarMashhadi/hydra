@@ -39,6 +39,8 @@ def discover_plugins():
 
 
 if sys.version_info >= (3, 7):
+    # Overriding __getattr__ in module level introduced in 3.7:
+    # https://www.python.org/dev/peps/pep-0562/
     _uninitialized = object()
     _registered_platforms = _uninitialized
 

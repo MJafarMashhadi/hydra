@@ -1,6 +1,9 @@
 import pytest
 from hydra.cli import *
 from click.testing import CliRunner
+from hydra.cloud.local_platform import LocalPlatform
+from hydra.cloud.google_cloud_platform import GoogleCloudPlatform
+
 
 TEST_YAML_PATH = "tests/resources/test.yaml"
 
@@ -42,11 +45,11 @@ def test_train_local_cil(mocker):
         return_value=OPTIONS
     )
     mocker.patch(
-        'hydra.cli.LocalPlatform.__init__',
+        'hydra.cloud.local_platform.LocalPlatform.__init__',
         return_value=None
     )
     mocker.patch(
-        'hydra.cli.LocalPlatform.train',
+        'hydra.cloud.local_platform.LocalPlatform.train',
     )
 
     runner = CliRunner()
@@ -91,11 +94,11 @@ def test_train_google_cloud_cli(mocker):
         return_value=OPTIONS
     )
     mocker.patch(
-        'hydra.cli.GoogleCloudPlatform.__init__',
+        'hydra.cloud.google_cloud_platform.GoogleCloudPlatform.__init__',
         return_value=None
     )
     mocker.patch(
-        'hydra.cli.GoogleCloudPlatform.train'
+        'hydra.cloud.google_cloud_platform.GoogleCloudPlatform.train'
     )
 
     runner = CliRunner()
@@ -141,11 +144,11 @@ def test_train_yaml(mocker):
         return_value=(REPO_URL, COMMIT_SHA)
     )
     mocker.patch(
-        'hydra.cli.LocalPlatform.__init__',
+        'hydra.cloud.local_platform.LocalPlatform.__init__',
         return_value=None
     )
     mocker.patch(
-        'hydra.cli.LocalPlatform.train',
+        'hydra.cloud.local_platform.LocalPlatform.train',
     )
 
     runner = CliRunner()

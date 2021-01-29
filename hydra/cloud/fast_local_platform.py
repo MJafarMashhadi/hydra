@@ -2,7 +2,9 @@ import os
 from hydra.cloud.abstract_platform import AbstractPlatform
 
 class FastLocalPlatform(AbstractPlatform):
-    def __init__(self, model_path, options):
+    short_name = 'fast_local'
+
+    def __init__(self, model_path, options, **ignored_args):
         super().__init__(model_path, options)
 
     def train(self):

@@ -5,10 +5,7 @@ import click
 import hydra.utils.constants as const
 from hydra.utils.git import check_repo
 from hydra.utils.utils import dict_to_string, inflate_options
-from hydra.cloud.local_platform import LocalPlatform
-from hydra.cloud.fast_local_platform import FastLocalPlatform
-from hydra.cloud.google_cloud_platform import GoogleCloudPlatform
-from hydra.cloud.aws_platform import AWSPlatform
+import hydra.cloud
 
 from hydra.version import __version__
 
@@ -23,7 +20,7 @@ def cli():
 @click.option('-y', '--yaml_path', default='hydra.yaml', type=str)
 @click.option('-p', '--project_name', default=None, type=str)
 @click.option('-m', '--model_path', default=None, type=str)
-@click.option('--cloud', default=None, type=click.Choice(['fast_local','local', 'aws', 'gcp', 'azure'], case_sensitive=False))
+@click.option('--cloud', default=None, type=click.Choice(hydra.cloud.registered_platforms.keys(), case_sensitive=False))
 @click.option('--github_token', envvar='GITHUB_TOKEN') # Takes either an option or environment var
 
 # Cloud specific options
@@ -71,25 +68,20 @@ def train(
 
             model_path = train_data.get('model_path', const.MODEL_PATH_DEFAULT) if model_path is None else model_path
             cloud = train_data.get('cloud', const.CLOUD_DEFAULT).lower() if cloud is None else cloud
-            if cloud == 'gcp' or cloud == 'aws':
-                region = train_data.get('region', const.REGION_DEFAULT) if region is None else region
 
-                cpu_count = train_data.get('cpu_count', const.CPU_COUNT_DEFAULT) if cpu_count is None else cpu_count
-                memory_size = train_data.get('memory_size', const.MEMORY_SIZE_DEFAULT) if memory_size is None else memory_size
-                gpu_count = train_data.get('gpu_count', const.GPU_COUNT_DEFAULT) if gpu_count is None else gpu_count
-                gpu_type = train_data.get('gpu_type', const.GPU_TYPE_DEFAULT) if gpu_type is None else gpu_type
+            # Cloud specific 
+            region = train_data.get('region', const.REGION_DEFAULT) if region is None else region
 
-                image_tag = train_data.get('image_tag', const.IMAGE_TAG_DEFAULT) if image_tag is None else image_tag
-                image_url = train_data.get('image_url', const.IMAGE_URL_DEFAULT) if image_url is None else image_url
+            cpu_count = train_data.get('cpu_count', const.CPU_COUNT_DEFAULT) if cpu_count is None else cpu_count
+            memory_size = train_data.get('memory_size', const.MEMORY_SIZE_DEFAULT) if memory_size is None else memory_size
+            gpu_count = train_data.get('gpu_count', const.GPU_COUNT_DEFAULT) if gpu_count is None else gpu_count
+            gpu_type = train_data.get('gpu_type', const.GPU_TYPE_DEFAULT) if gpu_type is None else gpu_type
 
-            elif cloud == 'local' or cloud == 'fast_local':
-                pass
-
-            else:
-                raise Exception("Reached parts of Hydra that are either not implemented or recognized.")
+            image_tag = train_data.get('image_tag', const.IMAGE_TAG_DEFAULT) if image_tag is None else image_tag
+            image_url = train_data.get('image_url', const.IMAGE_URL_DEFAULT) if image_url is None else image_url
 
             options_list = train_data.get('options', const.OPTIONS_DEFAULT) if options is None else options
-    # Read the options for run from CIL
+    # Read the options for run from CLI
     else:
         model_path = const.MODEL_PATH_DEFAULT if model_path is None else model_path
         cloud = const.CLOUD_DEFAULT if cloud is None else cloud
@@ -119,55 +111,24 @@ def train(
 
         print("\n[Hydra Info]: Runnning experiment #{} with the following options: \n {}\n".format(i, options))
 
-        if cloud == 'fast_local':
-            platform = FastLocalPlatform(model_path, options_str)
-            platform.train()
-            continue
-
         git_url, commit_sha = check_repo(github_token)
-
-        if cloud == 'local':
-            platform = LocalPlatform(
-                model_path=model_path,
-                options=options_str,
-                git_url=git_url,
-                commit_sha=commit_sha,
-                github_token=github_token)
-
-        elif cloud == 'gcp':
-            platform = GoogleCloudPlatform(
-                model_path=model_path,
-                github_token=github_token,
-                cpu=cpu_count,
-                memory=memory_size,
-                gpu_count=gpu_count,
-                gpu_type=gpu_type,
-                region=region,
-                git_url=git_url,
-                commit_sha=commit_sha,
-                image_url=image_url,
-                image_tag=image_tag,
-                options=options_str)
-
-        elif cloud == 'aws':
-            platform = AWSPlatform(
-                model_path=model_path,
-                project_name=project_name,
-                github_token=github_token,
-                cpu=cpu_count,
-                memory=memory_size,
-                gpu_count=gpu_count,
-                region=region,
-                git_url=git_url,
-                commit_sha=commit_sha,
-                image_url=image_url,
-                image_tag=image_tag,
-                options=options
-            )
-
-        else:
-            raise Exception("Reached parts of Hydra that are not yet implemented.")
-
+        args = dict(
+            model_path=model_path,
+            options=options_str,
+            git_url=git_url,
+            commit_sha=commit_sha,
+            github_token=github_token,
+            cpu=cpu_count,
+            memory=memory_size,
+            gpu_count=gpu_count,
+            gpu_type=gpu_type,
+            region=region,
+            image_url=image_url,
+            image_tag=image_tag,
+            project_name=project_name,
+        )
+        
+        platform = hydra.cloud.registered_platforms[cloud](**args)
         platform.train()
 
     return 0

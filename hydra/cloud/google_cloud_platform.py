@@ -3,6 +3,7 @@ import json
 from hydra.cloud.abstract_platform import AbstractPlatform
 
 class GoogleCloudPlatform(AbstractPlatform):
+    short_name = 'gcp'
 
     CPU_COST_PER_HOUR = 0.021811
     MEMORY_COST_PER_HOUR = 0.002923
@@ -20,7 +21,9 @@ class GoogleCloudPlatform(AbstractPlatform):
         image_tag,
         image_url,
         options,
-        region):
+        region,
+        **ignored_args
+    ):
 
         self.git_url = git_url
         self.commit_sha = commit_sha

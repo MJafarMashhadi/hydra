@@ -18,13 +18,19 @@ def mark_disabled(clazz):
 def register_plugin(clazz):
     import hydra.cloud 
     _check_class(clazz)
-    hydra.cloud.registered_platforms.append(clazz)
+    name = clazz.get_short_name()
+    if name in hydra.cloud.registered_platforms:
+        raise ValueError(f"Conflicting platform name {name}: {clazz}, {hydra.cloud.registered_platforms[name]}")
+
+    hydra.cloud.registered_platforms[clazz.get_short_name()] = clazz
     return clazz
 
 
 @mark_disabled
 class AbstractPlatform():
-    def __init__(self, model_path, options):
+    short_name = 'Abstract Platform'
+
+    def __init__(self, model_path, options, **kwargs):
         self.model_path = model_path
         self.options = options
 
@@ -33,6 +39,15 @@ class AbstractPlatform():
 
     def serve(self):
         raise Exception("Not Implemented: Please implement this function in the subclass.")
+
+    @classmethod
+    def get_short_name(cls):
+        """
+        Short name of the platform, used in cli. 
+        Subclasses can either override short_name class variable
+        or this class method.
+        """
+        return cls.short_name
 
     def run_command(self, command):
         subprocess.run(command)

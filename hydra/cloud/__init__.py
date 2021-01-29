@@ -5,6 +5,8 @@ import logging
 import sys
 from hydra.utils import reflection
 from .abstract_platform import AbstractPlatform
+from typing import Dict
+
 
 logger = logging.getLogger("plugin_loader")
 
@@ -29,11 +31,14 @@ def discover_plugins():
         else:
             modules.append(mod)
 
-    _registered_platforms = []
+    _registered_platforms = dict()
     for plugin in reflection.get_all_subclasses(AbstractPlatform):
         if getattr(plugin, '__hydra_plugin_disabled__', lambda *_: False)():
             continue
-        _registered_platforms.append(plugin)
+        name = plugin.get_short_name()
+        if name in _registered_platforms:
+            raise ValueError(f"Conflicting platform name {name}: {plugin}, {_registered_platforms[name]}")
+        _registered_platforms[name] = plugin
 
     return _registered_platforms
 
@@ -42,7 +47,7 @@ if sys.version_info >= (3, 7):
     # Overriding __getattr__ in module level introduced in 3.7:
     # https://www.python.org/dev/peps/pep-0562/
     _uninitialized = object()
-    _registered_platforms = _uninitialized
+    _registered_platforms: Dict[str, AbstractPlatform] = _uninitialized
 
     def __getattr__(name: str):
         global _registered_platforms

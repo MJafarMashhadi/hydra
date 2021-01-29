@@ -3,7 +3,9 @@ import subprocess
 from hydra.cloud.abstract_platform import AbstractPlatform
 
 class LocalPlatform(AbstractPlatform):
-    def __init__(self, model_path, options, git_url, commit_sha, github_token):
+    short_name = 'local'
+
+    def __init__(self, model_path, options, git_url, commit_sha, github_token, **ignored_args):
         self.git_url = git_url
         self.commit_sha = commit_sha
         self.github_token = github_token

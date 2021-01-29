@@ -5,6 +5,7 @@ import boto3
 from hydra.cloud.abstract_platform import AbstractPlatform
 
 class AWSPlatform(AbstractPlatform):
+    short_name = 'aws'
 
     def __init__(
             self,
@@ -19,7 +20,8 @@ class AWSPlatform(AbstractPlatform):
             image_tag,
             image_url,
             options,
-            region):
+            region,
+            **ignored_args):
 
         self.project_name = project_name
         self.git_url = git_url
